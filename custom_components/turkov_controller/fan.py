@@ -1,5 +1,6 @@
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
 
 from homeassistant.components.fan import (
     SUPPORT_SET_SPEED,
@@ -12,8 +13,7 @@ from .const import (
     SPEED_LOW,
     SPEED_MEDIUM,
     SPEED_HIGH,
-    VALUE_TO_SPEED,
-    SPEED_TO_VALUE,
+    ORDERED_NAMED_FAN_SPEEDS,
     SIGNAL_TURKOV_CONTROLLER_STATE_UPDATE
 )
 
@@ -43,11 +43,13 @@ class TurkovControllerFan(FanEntity):
     async def async_set_speed(self, speed: str):
         """async_turn_on is used to set speed"""
 
-    async def async_turn_on(self, speed: str = None, **kwargs) -> None:
+    async def async_turn_on(self, speed: str = None, percentage: int = None, preset_mode: str = None, **kwargs) -> None:
+        """Turn on the fan."""
         # ~ self._state_proxy.set_speed(speed if not speed is None else SPEED_LOW)
         await self._state_proxy.set_on(True)
 
     async def async_turn_off(self, **kwargs) -> None:
+        """Turn the fan off."""
         # ~ self._state_proxy.set_speed(SPEED_OFF)
         await self._state_proxy.set_on(False)
 
@@ -60,15 +62,24 @@ class TurkovControllerFan(FanEntity):
         return self._state_proxy.get_power_state()
 
     @property
-    def speed(self) -> str:
-        speed = self._state_proxy.get_fan_speed()
-        if speed == None:
-            return None
-        return VALUE_TO_SPEED[speed]
+    def percentage(self) -> int:
+        """Return the current speed percentage."""
+        s = self._state_proxy.get_fan_speed()
+        if s is not None:
+          return ordered_list_item_to_percentage(ORDERED_NAMED_FAN_SPEEDS, s)
+        else:
+          return 0
+
+    async def async_set_percentage(self, percentage: int) -> None:
+        """Set the speed of the fan, as a percentage."""
+        if percentage == 0:
+            await self._state_proxy.set_on(False)
+        await self._state_proxy.set_fan_speed(percentage_to_ordered_list_item(ORDERED_NAMED_FAN_SPEEDS, percentage))
 
     @property
-    def speed_list(self) -> list:
-        return [SPEED_OFF, SPEED_LOW, SPEED_MEDIUM, SPEED_HIGH]
+    def speed_count(self) -> int:
+        """Return the number of speeds the fan supports."""
+        return len(ORDERED_NAMED_FAN_SPEEDS)
 
     @property
     def supported_features(self) -> int:

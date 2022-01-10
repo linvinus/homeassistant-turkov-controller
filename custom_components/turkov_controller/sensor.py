@@ -19,13 +19,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
             TurkovControllerTempSensor(state_proxy, name + "Outside Air", "out_temp"),
             TurkovControllerTempSensor(state_proxy, name + "Internal Air", "in_temp"),
             TurkovControllerTempSensor(state_proxy, name + "Target Air", "temp_sp"),
-            #TurkovControllerTempSensor(client, name + "Extract Air", "temp_extract_air"),
-            #TurkovControllerTempSensor(client, name + "Exhaust Air", "temp_outgoing_air"),
-            #TurkovControllerSensor(client, name + "Extract Air Humidity", "v02136", 2, "%", "mdi:water-percent"),
-            #TurkovControllerSensor(client, name + "Supply Air Speed", "v00348", 4, "rpm", "mdi:fan"),
-            #TurkovControllerSensor(client, name + "Extract Air Speed", "v00349", 4, "rpm", "mdi:fan"),
             TurkovControllerFanSpeedSensor(state_proxy, name),
-            # ~ TurkovControllerBoostTimeSensor(state_proxy, name),
+            TurkovControllerFanModeSensor(state_proxy, name),
+            TurkovControllerFanFilterSensor(state_proxy, name),
         ],
         update_before_add=False
     )
@@ -129,10 +125,10 @@ class TurkovControllerFanSpeedSensor(Entity):
     def unit_of_measurement(self):
         return ""
 
-class TurkovControllerBoostTimeSensor(Entity):
+class TurkovControllerFanModeSensor(Entity):
     def __init__(self, state_proxy, name):
         self._state_proxy = state_proxy
-        self._name = name + "Boost Time"
+        self._name = name + "Fan Mode"
 
     @property
     def should_poll(self):
@@ -153,12 +149,47 @@ class TurkovControllerBoostTimeSensor(Entity):
 
     @property
     def state(self):
-        return self._state_proxy.get_boost_time()
+        return self._state_proxy.get_mode()
 
     @property
     def icon(self):
-        return "mdi:clock"
+        return "mdi:radiator"
 
     @property
     def unit_of_measurement(self):
-        return "mins"
+        return ""
+
+
+class TurkovControllerFanFilterSensor(Entity):
+    def __init__(self, state_proxy, name):
+        self._state_proxy = state_proxy
+        self._name = name + "Fan Filter usage"
+
+    @property
+    def should_poll(self):
+        return False
+
+    async def async_added_to_hass(self):
+        async_dispatcher_connect(
+            self.hass, SIGNAL_TURKOV_CONTROLLER_STATE_UPDATE, self._update_callback
+        )
+
+    @callback
+    def _update_callback(self):
+        self.async_schedule_update_ha_state(True)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def state(self):
+        return self._state_proxy.get_filter()
+
+    @property
+    def icon(self):
+        return "mdi:air-filter"
+
+    @property
+    def unit_of_measurement(self):
+        return "%"

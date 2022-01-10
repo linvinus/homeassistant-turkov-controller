@@ -17,11 +17,5 @@ REQUEST_TIMEOUT = 60
 
 SIGNAL_TURKOV_CONTROLLER_STATE_UPDATE = "turkov_controller_state_update"
 
+ORDERED_NAMED_FAN_SPEEDS = [1, 2, 3]  # off is not included
 
-VALUE_TO_SPEED = {
-    0: SPEED_OFF,
-    1: SPEED_LOW,
-    2: SPEED_MEDIUM,
-    3: SPEED_HIGH
-}
-SPEED_TO_VALUE = {v: k for k, v in VALUE_TO_SPEED.items()}
