@@ -1,0 +1,5 @@
+{
+  "name": "Turkov ventilation",
+  "iot_class": "Local Polling",
+  "render_readme": true
+}
